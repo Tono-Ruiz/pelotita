@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas {
+            display: block;
+            background: #111;
+            margin: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-white text-2xl font-bold mb-4">Juego Breakout</h1>
+    <canvas id="gameCanvas"></canvas>
+    <div class="text-white mt-4">
+        <p>Usa las flechas izquierda y derecha para mover la paleta.</p>
+        <p>Rompe todos los bloques para ganar.</p>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 800;
+        canvas.height = 500;
+
+        const paddle = {
+            x: canvas.width / 2 - 50,
+            y: canvas.height - 20,
+            width: 100,
+            height: 10,
+            dx: 0
+        };
+
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 8,
+            dx: 3,
+            dy: -3
+        };
+
+        const bricks = [];
+        const rows = 5;
+        const cols = 10;
+        const brickWidth = 75;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const offsetX = 30;
+        const offsetY = 50;
+
+        for (let i = 0; i < rows; i++) {
+            bricks[i] = [];
+            for (let j = 0; j < cols; j++) {
+                bricks[i][j] = { x: offsetX + j * (brickWidth + brickPadding), y: offsetY + i * (brickHeight + brickPadding), status: 1 };
+            }
+        }
+
+        function drawPaddle() {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+        }
+
+        function drawBall() {
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (bricks[i][j].status) {
+                        ctx.fillStyle = `hsl(${i * 60}, 100%, 50%)`;
+                        ctx.fillRect(bricks[i][j].x, bricks[i][j].y, brickWidth, brickHeight);
+                    }
+                }
+            }
+        }
+
+        function update() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) ball.dx *= -1;
+            if (ball.y - ball.radius < 0) ball.dy *= -1;
+
+            if (
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width &&
+                ball.y + ball.radius > paddle.y
+            ) {
+                ball.dy *= -1;
+            }
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    let brick = bricks[i][j];
+                    if (brick.status) {
+                        if (
+                            ball.x > brick.x &&
+                            ball.x < brick.x + brickWidth &&
+                            ball.y > brick.y &&
+                            ball.y < brick.y + brickHeight
+                        ) {
+                            ball.dy *= -1;
+                            brick.status = 0;
+                        }
+                    }
+                }
+            }
+
+            if (ball.y + ball.radius > canvas.height) document.location.reload();
+            paddle.x += paddle.dx;
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawPaddle();
+            drawBall();
+        }
+
+        function gameLoop() {
+            draw();
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight") paddle.dx = 5;
+            if (e.key === "ArrowLeft") paddle.dx = -5;
+        });
+
+        document.addEventListener("keyup", () => paddle.dx = 0);
+        gameLoop();
+    </script>
+</body>
+</html>
